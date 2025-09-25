@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:boy_boy/models/restaurant.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
 import '../utils/constants.dart';
 import '../models/order.dart';
@@ -51,7 +52,6 @@ class _MapScreenState extends State<MapScreen> {
     try {
       // Get current location
       _currentPosition = await _locationService.getCurrentLocation();
-      print('Current position: $_currentPosition');
 
       if (_currentPosition != null) {
         // Start real-time location tracking
@@ -60,19 +60,15 @@ class _MapScreenState extends State<MapScreen> {
             _updateCurrentPosition(position);
           },
         );
-        print('Position subscription started');
 
         // Get route from restaurant to customer
         await _getRoute();
-        print('Route calculated');
 
         // Setup markers
         _setupMarkers();
-        print('Markers set up');
 
         // Start periodic updates
         _startPeriodicUpdates();
-        print('Periodic updates started');
 
         if (mounted) {
           setState(() {
@@ -81,7 +77,6 @@ class _MapScreenState extends State<MapScreen> {
         }
       }
     } catch (e) {
-      print('Error initializing map: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -133,7 +128,7 @@ class _MapScreenState extends State<MapScreen> {
           title: widget.order.customerName,
           snippet: widget.order.customerAddress,
         ),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       ),
 
       // Current position marker
@@ -196,10 +191,7 @@ class _MapScreenState extends State<MapScreen> {
               _currentPosition!.longitude,
             ),
             destinations: [
-              LatLng(
-                widget.restaurant.latitude,
-                widget.restaurant.longitude,
-              ),
+              LatLng(widget.restaurant.latitude, widget.restaurant.longitude),
               LatLng(
                 widget.order.customerLatitude,
                 widget.order.customerLongitude,
@@ -245,10 +237,7 @@ class _MapScreenState extends State<MapScreen> {
     if (_mapController == null) return;
 
     List<LatLng> positions = [
-      LatLng(
-        widget.restaurant.latitude,
-        widget.restaurant.longitude,
-      ),
+      LatLng(widget.restaurant.latitude, widget.restaurant.longitude),
       LatLng(widget.order.customerLatitude, widget.order.customerLongitude),
       if (_currentPosition != null)
         LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
@@ -292,7 +281,7 @@ class _MapScreenState extends State<MapScreen> {
             children: [
               // Header
               Container(
-                padding:  EdgeInsets.all(AppDimensions.paddingLarge),
+                padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
                 child: Row(
                   children: [
                     GestureDetector(
@@ -303,12 +292,12 @@ class _MapScreenState extends State<MapScreen> {
                         size: 24,
                       ),
                     ),
-                    SizedBox(width: AppDimensions.paddingMedium),
+                    SizedBox(width: AppDimensions.paddingMedium.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Delivery Route',
                             style: TextStyle(
                               color: Colors.white,
@@ -318,7 +307,7 @@ class _MapScreenState extends State<MapScreen> {
                           ),
                           Text(
                             'Order #${widget.order.orderNumber}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
                             ),
@@ -333,17 +322,17 @@ class _MapScreenState extends State<MapScreen> {
               // Map Container
               Expanded(
                 child: Container(
-                  margin: EdgeInsets.all(AppDimensions.paddingLarge),
+                  margin: EdgeInsets.all(AppDimensions.paddingLarge.w),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusLarge,
+                      AppDimensions.radiusLarge.r,
                     ),
                     boxShadow: AppShadows.cardShadow,
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusLarge,
+                      AppDimensions.radiusLarge.r,
                     ),
                     child: _isLoading
                         ? const Center(
@@ -352,7 +341,7 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                           )
                         : _currentPosition == null
-                        ? const Center(
+                        ? Center(
                             child: Text(
                               'Unable to get location.\nPlease enable location services.',
                               textAlign: TextAlign.center,
@@ -382,16 +371,16 @@ class _MapScreenState extends State<MapScreen> {
               // Distance Info Panel
               Container(
                 margin: EdgeInsets.fromLTRB(
-                  AppDimensions.paddingLarge,
+                  AppDimensions.paddingLarge.w,
                   0,
-                  AppDimensions.paddingLarge,
-                  AppDimensions.paddingLarge,
+                  AppDimensions.paddingLarge.w,
+                  AppDimensions.paddingLarge.h,
                 ),
-                padding:  EdgeInsets.all(AppDimensions.paddingLarge),
+                padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(
-                    AppDimensions.radiusLarge,
+                    AppDimensions.radiusLarge.r,
                   ),
                   boxShadow: AppShadows.cardShadow,
                 ),
@@ -407,7 +396,7 @@ class _MapScreenState extends State<MapScreen> {
                             AppColors.statusAssigned,
                           ),
                         ),
-                        SizedBox(width: AppDimensions.paddingMedium),
+                        SizedBox(width: AppDimensions.paddingMedium.w),
                         Expanded(
                           child: _buildDistanceCard(
                             'To Customer',
@@ -419,15 +408,13 @@ class _MapScreenState extends State<MapScreen> {
                       ],
                     ),
                     if (_routeInfo != null) ...[
-                      SizedBox(height: AppDimensions.paddingMedium),
+                      SizedBox(height: AppDimensions.paddingMedium.h),
                       Container(
-                        padding: EdgeInsets.all(
-                          AppDimensions.paddingMedium,
-                        ),
+                        padding: EdgeInsets.all(AppDimensions.paddingMedium.w),
                         decoration: BoxDecoration(
                           color: AppColors.primaryOrange.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(
-                            AppDimensions.radiusMedium,
+                            AppDimensions.radiusMedium.r,
                           ),
                         ),
                         child: Row(
@@ -435,7 +422,7 @@ class _MapScreenState extends State<MapScreen> {
                           children: [
                             Column(
                               children: [
-                                const Text(
+                                Text(
                                   'Route Distance',
                                   style: AppTextStyles.caption,
                                 ),
@@ -447,10 +434,7 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                             Column(
                               children: [
-                                const Text(
-                                  'Duration',
-                                  style: AppTextStyles.caption,
-                                ),
+                                Text('Duration', style: AppTextStyles.caption),
                                 Text(
                                   _routeInfo!.duration,
                                   style: AppTextStyles.bodyMedium,
@@ -459,7 +443,7 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                             Column(
                               children: [
-                                const Text('ETA', style: AppTextStyles.caption),
+                                Text('ETA', style: AppTextStyles.caption),
                                 Text(
                                   _estimatedArrival,
                                   style: AppTextStyles.bodyMedium,
@@ -487,15 +471,15 @@ class _MapScreenState extends State<MapScreen> {
     Color color,
   ) {
     return Container(
-      padding:  EdgeInsets.all(AppDimensions.paddingMedium),
+      padding: EdgeInsets.all(AppDimensions.paddingMedium.w),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 24),
-           SizedBox(height: AppDimensions.paddingSmall),
+          SizedBox(height: AppDimensions.paddingSmall.h),
           Text(title, style: AppTextStyles.caption),
           Text(
             distance.isEmpty ? '...' : distance,

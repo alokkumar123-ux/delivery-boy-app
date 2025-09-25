@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../providers/ui_state_provider.dart';
 import '../utils/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final VoidCallback onLogout;
+
+  const ProfileScreen({super.key, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +24,7 @@ class ProfileScreen extends StatelessWidget {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+                padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
                 child: Row(
                   children: [
                     const Text(
@@ -30,16 +36,6 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    // IconButton(
-                    //   onPressed: () {
-                    //     // Show profile edit options
-                    //   },
-                    //   icon: const Icon(
-                    //     Icons.edit,
-                    //     color: Colors.white,
-                    //     size: 24,
-                    //   ),
-                    // ),
                   ],
                 ),
               ),
@@ -47,11 +43,11 @@ class ProfileScreen extends StatelessWidget {
               // Profile Content
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.all(AppDimensions.paddingLarge),
+                  margin: EdgeInsets.all(AppDimensions.paddingLarge.w),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusLarge,
+                      AppDimensions.radiusLarge.r,
                     ),
                     boxShadow: AppShadows.cardShadow,
                   ),
@@ -69,54 +65,83 @@ class ProfileScreen extends StatelessWidget {
                       }
 
                       return SingleChildScrollView(
-                        padding: const EdgeInsets.all(
-                          AppDimensions.paddingLarge,
-                        ),
+                        padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
                         child: Column(
                           children: [
                             // Profile Picture
                             Container(
-                              width: 120,
-                              height: 120,
+                              width: 120.w,
+                              height: 120.w,
                               decoration: BoxDecoration(
                                 color: AppColors.primaryOrange,
-                                borderRadius: BorderRadius.circular(60),
+                                borderRadius: BorderRadius.circular(60.r),
                                 boxShadow: AppShadows.cardShadow,
                               ),
-                              child: const Icon(
-                                Icons.person,
-                                color: Colors.white,
-                                size: 60,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(60.r),
+                                child:
+                                    user?.profileImage != null &&
+                                        user!.profileImage!.isNotEmpty
+                                    ? CachedNetworkImage(
+                                        imageUrl: user.profileImage!,
+                                        width: 120.w,
+                                        height: 120.w,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) =>
+                                            Container(
+                                              color: AppColors.primaryOrange,
+                                              child: const Icon(
+                                                Icons.person,
+                                                color: Colors.white,
+                                                size: 60,
+                                              ),
+                                            ),
+                                        errorWidget: (context, url, error) =>
+                                            Container(
+                                              color: AppColors.primaryOrange,
+                                              child: const Icon(
+                                                Icons.person,
+                                                color: Colors.white,
+                                                size: 60,
+                                              ),
+                                            ),
+                                      )
+                                    : const Icon(
+                                        Icons.person,
+                                        color: Colors.white,
+                                        size: 60,
+                                      ),
                               ),
                             ),
 
-                            const SizedBox(height: AppDimensions.paddingLarge),
+                            SizedBox(height: AppDimensions.paddingLarge.h),
 
                             // User Name
                             Text(
-                              user?.name ?? 'Delivery Boy',
+                              user?.userName ?? 'Delivery Boy',
                               style: AppTextStyles.header1,
                             ),
 
-                            const SizedBox(height: AppDimensions.paddingSmall),
+                            SizedBox(height: AppDimensions.paddingSmall.h),
 
                             // User Email
                             Text(
-                              user?.email ?? 'email@example.com',
+                              user?.userEmail ?? 'email@example.com',
                               style: AppTextStyles.bodyMedium.copyWith(
                                 color: AppColors.textCaption,
                               ),
                             ),
 
-                            const SizedBox(
-                              height: AppDimensions.paddingXXLarge,
-                            ),
+                            SizedBox(height: AppDimensions.paddingXXLarge.h),
 
                             // User Details Section
                             _buildSection(
                               title: 'Personal Information',
                               children: [
-                                _buildInfoRow('Phone', user?.phone ?? 'N/A'),
+                                _buildInfoRow(
+                                  'Phone',
+                                  user?.userPhone ?? 'N/A',
+                                ),
                                 _buildInfoRow(
                                   'Vehicle',
                                   '${user?.vehicleType ?? 'N/A'} - ${user?.vehicleNumber ?? 'N/A'}',
@@ -128,7 +153,7 @@ class ProfileScreen extends StatelessWidget {
                               ],
                             ),
 
-                            const SizedBox(height: AppDimensions.paddingLarge),
+                            SizedBox(height: AppDimensions.paddingLarge.h),
 
                             // Restaurant Details Section
                             _buildSection(
@@ -149,59 +174,37 @@ class ProfileScreen extends StatelessWidget {
                               ],
                             ),
 
-                            const SizedBox(height: AppDimensions.paddingLarge),
+                            // SizedBox(height: AppDimensions.paddingLarge.h),
 
-                            // Statistics Section - Commented out for now
-                            // _buildSection(
-                            //   title: 'Delivery Statistics',
-                            //   children: [
-                            //     _buildStatRow(
-                            //       'Total Orders',
-                            //       '${provider.orders.length}',
-                            //     ),
-                            //     _buildStatRow(
-                            //       'Delivered Today',
-                            //       '${provider.getTodayOrders().length}',
-                            //     ),
-                            //     _buildStatRow(
-                            //       'Total Earnings',
-                            //       '\$${provider.getOrderStatistics()['total_earnings']?.toStringAsFixed(2) ?? '0.00'}',
-                            //     ),
-                            //   ],
+                            // // Action Buttons
+                            // _buildActionButton(
+                            //   icon: Icons.settings,
+                            //   text: 'Settings',
+                            //   onTap: () {
+                            //     // Navigate to settings
+                            //   },
                             // ),
 
-                            // const SizedBox(height: AppDimensions.paddingLarge),
+                            // SizedBox(height: AppDimensions.paddingMedium.h),
 
-                            // Action Buttons
-                            _buildActionButton(
-                              icon: Icons.settings,
-                              text: 'Settings',
-                              onTap: () {
-                                // Navigate to settings
-                              },
-                            ),
+                            // _buildActionButton(
+                            //   icon: Icons.help,
+                            //   text: 'Help & Support',
+                            //   onTap: () {
+                            //     // Navigate to help
+                            //   },
+                            // ),
 
-                            const SizedBox(height: AppDimensions.paddingMedium),
+                            // SizedBox(height: AppDimensions.paddingMedium.h),
 
-                            _buildActionButton(
-                              icon: Icons.help,
-                              text: 'Help & Support',
-                              onTap: () {
-                                // Navigate to help
-                              },
-                            ),
-
-                            const SizedBox(height: AppDimensions.paddingMedium),
-
-                            _buildActionButton(
-                              icon: Icons.info,
-                              text: 'About App',
-                              onTap: () {
-                                // Show app info
-                              },
-                            ),
-
-                            const SizedBox(height: AppDimensions.paddingLarge),
+                            // _buildActionButton(
+                            //   icon: Icons.info,
+                            //   text: 'About App',
+                            //   onTap: () {
+                            //     // Show app info
+                            //   },
+                            // ),
+                            SizedBox(height: AppDimensions.paddingLarge.h),
 
                             // Logout Button
                             Container(
@@ -210,7 +213,7 @@ class ProfileScreen extends StatelessWidget {
                               decoration: BoxDecoration(
                                 color: AppColors.statusError,
                                 borderRadius: BorderRadius.circular(
-                                  AppDimensions.radiusMedium,
+                                  AppDimensions.radiusMedium.r,
                                 ),
                               ),
                               child: TextButton(
@@ -228,7 +231,7 @@ class ProfileScreen extends StatelessWidget {
                               ),
                             ),
 
-                            const SizedBox(height: AppDimensions.paddingMedium),
+                            SizedBox(height: AppDimensions.paddingMedium.h),
 
                             // App Version
                             Text(
@@ -262,12 +265,12 @@ class ProfileScreen extends StatelessWidget {
           title,
           style: AppTextStyles.header3.copyWith(color: AppColors.primaryOrange),
         ),
-        const SizedBox(height: AppDimensions.paddingMedium),
+        SizedBox(height: AppDimensions.paddingMedium.h),
         Container(
-          padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+          padding: EdgeInsets.all(AppDimensions.paddingMedium.w),
           decoration: BoxDecoration(
             color: AppColors.chipBackground,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
           ),
           child: Column(children: children),
         ),
@@ -277,7 +280,7 @@ class ProfileScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall),
+      padding: EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall.h),
       child: Row(
         children: [
           Expanded(
@@ -299,36 +302,6 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textCaption,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.primaryOrange,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildActionButton({
     required IconData icon,
     required String text,
@@ -339,7 +312,7 @@ class ProfileScreen extends StatelessWidget {
       height: AppDimensions.buttonHeightSmall,
       decoration: BoxDecoration(
         color: AppColors.chipBackground,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
         border: Border.all(color: AppColors.borderColor),
       ),
       child: TextButton.icon(
@@ -370,7 +343,7 @@ class ProfileScreen extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
               // Get the provider and logout
               final provider = Provider.of<UIStateProvider>(
@@ -378,7 +351,11 @@ class ProfileScreen extends StatelessWidget {
                 listen: false,
               );
               provider.clearData();
-              // Navigate back to login (this will be handled by the parent)
+              // Clear persisted session
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('userId');
+              // Notify parent to handle navigation
+              onLogout();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.statusError,

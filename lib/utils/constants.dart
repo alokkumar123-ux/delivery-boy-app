@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class AppColors {
   // Primary Colors
@@ -33,53 +34,53 @@ class AppColors {
 
 class AppTextStyles {
   // Headers
-  static const TextStyle header1 = TextStyle(
-    fontSize: 24,
+  static TextStyle get header1 => TextStyle(
+    fontSize: 24.sp,
     fontWeight: FontWeight.w700,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle header2 = TextStyle(
-    fontSize: 20,
+  static TextStyle get header2 => TextStyle(
+    fontSize: 20.sp,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
 
-  static const TextStyle header3 = TextStyle(
-    fontSize: 18,
+  static TextStyle get header3 => TextStyle(
+    fontSize: 18.sp,
     fontWeight: FontWeight.w600,
     color: AppColors.textPrimary,
   );
 
   // Body Text
-  static const TextStyle bodyLarge = TextStyle(
-    fontSize: 16,
+  static TextStyle get bodyLarge => TextStyle(
+    fontSize: 16.sp,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle bodyMedium = TextStyle(
-    fontSize: 14,
+  static TextStyle get bodyMedium => TextStyle(
+    fontSize: 14.sp,
     fontWeight: FontWeight.w400,
     color: AppColors.textSecondary,
   );
 
-  static const TextStyle bodySmall = TextStyle(
-    fontSize: 12,
+  static TextStyle get bodySmall => TextStyle(
+    fontSize: 12.sp,
     fontWeight: FontWeight.w400,
     color: AppColors.textCaption,
   );
 
   // Button Text
-  static const TextStyle buttonText = TextStyle(
-    fontSize: 16,
+  static TextStyle get buttonText => TextStyle(
+    fontSize: 16.sp,
     fontWeight: FontWeight.w600,
     color: AppColors.textWhite,
   );
 
   // Caption Text
-  static const TextStyle caption = TextStyle(
-    fontSize: 12,
+  static TextStyle get caption => TextStyle(
+    fontSize: 12.sp,
     fontWeight: FontWeight.w500,
     color: AppColors.textCaption,
   );
@@ -133,19 +134,19 @@ class AppGradients {
 }
 
 class AppShadows {
-  static const List<BoxShadow> cardShadow = [
+  static List<BoxShadow> cardShadow = [
     BoxShadow(
       color: AppColors.cardShadow,
-      blurRadius: 15,
-      offset: Offset(0, 5),
+      blurRadius: 15.r,
+      offset: Offset(0, 5.h),
     ),
   ];
 
-  static const List<BoxShadow> buttonShadow = [
+  static List<BoxShadow> buttonShadow = [
     BoxShadow(
       color: AppColors.primaryOrange,
-      blurRadius: 10,
-      offset: Offset(0, 4),
+      blurRadius: 10.r,
+      offset: Offset(0, 4.h),
       spreadRadius: 0,
     ),
   ];

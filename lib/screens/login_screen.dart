@@ -1,9 +1,14 @@
+import 'package:boy_boy/services/notification_services.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import '../providers/ui_state_provider.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 import '../screens/main_navigation_screen.dart';
+import '../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,10 +27,12 @@ class _LoginScreenState extends State<LoginScreen>
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  NotificationServices notificationServices = NotificationServices();
 
   @override
   void initState() {
     super.initState();
+    notificationServices.requestNotificationPermission();
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -61,36 +68,67 @@ class _LoginScreenState extends State<LoginScreen>
       _isLoading = true;
     });
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
+    try {
+      // Call the real API
+      final loginResponse = await ApiService.deliveryLogin(
+        username: _usernameController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-    // Mock authentication logic
-    if (_usernameController.text == "code" &&
-        _passwordController.text == "code") {
-      // Initialize mock data
-      final provider = Provider.of<UIStateProvider>(context, listen: false);
-      provider.initializeMockData();
+      if (loginResponse.status == 'success') {
+        // Set user and restaurant data in provider
+        final provider = Provider.of<UIStateProvider>(context, listen: false);
+        provider.setUserData(loginResponse.user, loginResponse.restaurant);
 
-      // Navigate to main app
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (context) => MainNavigationScreen(
-              onLogout: () {
-                // Handle logout - navigate back to login
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
-            ),
-          ),
+        // Persist session: save full user and restaurant JSON for auto-login
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('userId', loginResponse.user.userId);
+        await prefs.setString(
+          'user_json',
+          jsonEncode(loginResponse.user.toJson()),
         );
+        await prefs.setString(
+          'restaurant_json',
+          jsonEncode(loginResponse.restaurant.toJson()),
+        );
+
+        // Navigate to main app
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => MainNavigationScreen(
+                onLogout: () {
+                  // Handle logout - navigate back to login
+                  SharedPreferences.getInstance().then((prefs) {
+                    prefs.remove('userId');
+                    prefs.remove('user_json');
+                    prefs.remove('restaurant_json');
+                  });
+                  provider.clearData();
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          AppHelpers.showSnackBar(
+            context,
+            loginResponse.message,
+            isError: true,
+          );
+        }
       }
-    } else {
+    } catch (e) {
       if (mounted) {
         AppHelpers.showSnackBar(
           context,
-          'Invalid credentials. Use: code / code',
+          'Login failed: ${e.toString()}',
           isError: true,
         );
       }
@@ -115,21 +153,18 @@ class _LoginScreenState extends State<LoginScreen>
               position: _slideAnimation,
               child: Center(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20.w),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Logo and Title Section
                       _buildLogoSection(),
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40.h),
 
                       // Login Card
                       _buildLoginCard(),
 
-                      const SizedBox(height: 30),
-
-                      // Demo Credentials Info
-                      _buildDemoInfo(),
+                      SizedBox(height: 30.h),
                     ],
                   ),
                 ),
@@ -146,30 +181,29 @@ class _LoginScreenState extends State<LoginScreen>
       children: [
         // App Icon
         Container(
-          width: 80,
-          height: 80,
+          width: 80.w,
+          height: 80.w,
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20.r),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                blurRadius: 20.r,
+                offset: Offset(0, 10.h),
               ),
             ],
           ),
-          child: const Icon(
-            Icons.delivery_dining,
-            size: 40,
-            color: AppColors.primaryOrange,
+          child: Padding(
+            padding: EdgeInsets.all(10.w),
+            child: Image.asset('assets/images/inapplogo.png', fit: BoxFit.fill),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20.h),
 
         // App Title
-        const Text('Delivery Boy', style: AppTextStyles.header1),
-        const SizedBox(height: 8),
+        Text('Delivery Boy', style: AppTextStyles.header1),
+        SizedBox(height: 8.h),
 
         // Subtitle
         Text(
@@ -185,35 +219,35 @@ class _LoginScreenState extends State<LoginScreen>
   Widget _buildLoginCard() {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.r),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            blurRadius: 20.r,
+            offset: Offset(0, 8.h),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32.w),
         child: Form(
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Welcome Text
-              const Text('Welcome Back!', style: AppTextStyles.header2),
-              const SizedBox(height: 8),
+              Text('Welcome Back!', style: AppTextStyles.header2),
+              SizedBox(height: 8.h),
               Text(
                 'Sign in to continue',
                 style: AppTextStyles.bodyLarge.copyWith(
                   color: AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
 
               // Username Field
               _buildInputField(
@@ -228,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen>
                   return null;
                 },
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20.h),
 
               // Password Field
               _buildInputField(
@@ -244,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen>
                   return null;
                 },
               ),
-              const SizedBox(height: 32),
+              SizedBox(height: 32.h),
 
               // Login Button
               _buildLoginButton(),
@@ -273,13 +307,13 @@ class _LoginScreenState extends State<LoginScreen>
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8.h),
         TextFormField(
           controller: controller,
           obscureText: isPassword ? _obscurePassword : false,
           validator: validator,
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: hint, // Fixed: Removed 'deliveryBoyId' syntax error
             hintStyle: AppTextStyles.bodyLarge.copyWith(
               color: AppColors.textSecondary.withOpacity(0.6),
             ),
@@ -305,33 +339,33 @@ class _LoginScreenState extends State<LoginScreen>
             filled: true,
             fillColor: AppColors.cardBackground,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               borderSide: BorderSide.none,
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               borderSide: BorderSide(
                 color: AppColors.borderColor.withOpacity(0.3),
                 width: 1,
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               borderSide: const BorderSide(
                 color: AppColors.primaryOrange,
                 width: 2,
               ),
             ),
             errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(16.r),
               borderSide: const BorderSide(
                 color: AppColors.statusError,
                 width: 1,
               ),
             ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 16,
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: 20.w,
+              vertical: 16.h,
             ),
           ),
         ),
@@ -386,40 +420,6 @@ class _LoginScreenState extends State<LoginScreen>
                   ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildDemoInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2), width: 1),
-      ),
-      child: Column(
-        children: [
-          const Icon(Icons.info_outline, color: Colors.white, size: 24),
-          const SizedBox(height: 8),
-          const Text(
-            'Demo Credentials',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Username: code\nPassword: code',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
-              fontSize: 14,
-            ),
-          ),
-        ],
       ),
     );
   }

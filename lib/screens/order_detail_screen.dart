@@ -1,12 +1,29 @@
+//
+
+import 'package:boy_boy/services/api_service.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../utils/constants.dart';
 import '../utils/helpers.dart';
 
-class OrderDetailScreen extends StatelessWidget {
+class OrderDetailScreen extends StatefulWidget {
   final Order order;
 
   const OrderDetailScreen({super.key, required this.order});
+
+  @override
+  State<OrderDetailScreen> createState() => _OrderDetailScreenState();
+}
+
+class _OrderDetailScreenState extends State<OrderDetailScreen> {
+  late Order currentOrder;
+
+  @override
+  void initState() {
+    super.initState();
+    currentOrder = widget.order;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +37,7 @@ class OrderDetailScreen extends StatelessWidget {
             children: [
               // Header
               Container(
-                padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+                padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
                 child: Row(
                   children: [
                     IconButton(
@@ -31,7 +48,7 @@ class OrderDetailScreen extends StatelessWidget {
                         size: 24,
                       ),
                     ),
-                    const SizedBox(width: AppDimensions.paddingMedium),
+                    SizedBox(width: AppDimensions.paddingMedium.w),
                     const Text(
                       'Order Details',
                       style: TextStyle(
@@ -47,59 +64,62 @@ class OrderDetailScreen extends StatelessWidget {
               // Order Details Content
               Expanded(
                 child: Container(
-                  margin: const EdgeInsets.all(AppDimensions.paddingLarge),
+                  margin: EdgeInsets.all(AppDimensions.paddingLarge.w),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(
-                      AppDimensions.radiusLarge,
+                      AppDimensions.radiusLarge.r,
                     ),
                     boxShadow: AppShadows.cardShadow,
                   ),
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+                    padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Order Header
                         _buildOrderHeader(),
 
-                        const SizedBox(height: AppDimensions.paddingLarge),
+                        SizedBox(height: AppDimensions.paddingLarge.h),
 
                         // Customer Information
                         _buildSection(
                           title: 'Customer Information',
                           children: [
-                            _buildInfoRow('Name', order.customerName),
-                            _buildInfoRow('Phone', order.customerPhone),
-                            _buildInfoRow('Address', order.customerAddress),
+                            _buildInfoRow('Name', currentOrder.customerName),
+                            _buildInfoRow('Phone', currentOrder.customerPhone),
+                            _buildInfoRow(
+                              'Address',
+                              currentOrder.customerAddress,
+                            ),
                           ],
                         ),
 
-                        const SizedBox(height: AppDimensions.paddingLarge),
+                        SizedBox(height: AppDimensions.paddingLarge.h),
 
                         // Order Items
                         _buildSection(
                           title: 'Order Items',
-                          children: order.items
+                          children: currentOrder.items
                               .map((item) => _buildItemRow(item))
                               .toList(),
                         ),
 
-                        const SizedBox(height: AppDimensions.paddingLarge),
+                        SizedBox(height: AppDimensions.paddingLarge.h),
 
                         // Payment Information
                         _buildSection(
                           title: 'Payment Information',
                           children: [
-                            _buildInfoRow('Method', order.paymentMethod),
+                            _buildInfoRow('Method', currentOrder.paymentMethod),
                             _buildInfoRow(
                               'Total Amount',
-                              '\₹${order.totalAmount.toStringAsFixed(2)}',
+                              '\₹${currentOrder.totalAmount.toStringAsFixed(2)}',
                             ),
                           ],
                         ),
 
-                        const SizedBox(height: AppDimensions.paddingLarge),
+                        SizedBox(height: AppDimensions.paddingLarge.h),
 
                         // Status Update Buttons
                         _buildStatusUpdateButtons(),
@@ -107,13 +127,14 @@ class OrderDetailScreen extends StatelessWidget {
                         const SizedBox(height: AppDimensions.paddingLarge),
 
                         // Notes
-                        if (order.notes != null && order.notes!.isNotEmpty)
+                        if (currentOrder.notes != null &&
+                            currentOrder.notes!.isNotEmpty)
                           _buildSection(
                             title: 'Notes',
                             children: [
                               _buildInfoRow(
                                 'Special Instructions',
-                                order.notes!,
+                                currentOrder.notes!,
                               ),
                             ],
                           ),
@@ -131,31 +152,31 @@ class OrderDetailScreen extends StatelessWidget {
 
   Widget _buildOrderHeader() {
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+      padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
       decoration: BoxDecoration(
         color: AppColors.chipBackground,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
       ),
       child: Column(
         children: [
           Text(
-            order.orderNumber,
+            currentOrder.orderNumber,
             style: AppTextStyles.header2.copyWith(
               color: AppColors.primaryOrange,
             ),
           ),
-          const SizedBox(height: AppDimensions.paddingSmall),
+          SizedBox(height: AppDimensions.paddingSmall.h),
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.paddingMedium,
-              vertical: AppDimensions.paddingSmall,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppDimensions.paddingMedium.w,
+              vertical: AppDimensions.paddingSmall.h,
             ),
             decoration: BoxDecoration(
-              color: AppHelpers.getStatusColor(order.status),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+              color: AppHelpers.getStatusColor(currentOrder.status),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
             ),
             child: Text(
-              AppHelpers.getStatusText(order.status),
+              AppHelpers.getStatusText(currentOrder.status),
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
@@ -178,12 +199,12 @@ class OrderDetailScreen extends StatelessWidget {
           title,
           style: AppTextStyles.header3.copyWith(color: AppColors.primaryOrange),
         ),
-        const SizedBox(height: AppDimensions.paddingMedium),
+        SizedBox(height: AppDimensions.paddingMedium.h),
         Container(
-          padding: const EdgeInsets.all(AppDimensions.paddingMedium),
+          padding: EdgeInsets.all(AppDimensions.paddingMedium.w),
           decoration: BoxDecoration(
             color: AppColors.chipBackground,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
           ),
           child: Column(children: children),
         ),
@@ -193,7 +214,7 @@ class OrderDetailScreen extends StatelessWidget {
 
   Widget _buildInfoRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall),
+      padding: EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall.h),
       child: Row(
         children: [
           Expanded(
@@ -217,7 +238,7 @@ class OrderDetailScreen extends StatelessWidget {
 
   Widget _buildItemRow(OrderItem item) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall),
+      padding: EdgeInsets.symmetric(vertical: AppDimensions.paddingSmall.h),
       child: Row(
         children: [
           Expanded(
@@ -258,22 +279,46 @@ class OrderDetailScreen extends StatelessWidget {
         ),
         const SizedBox(height: AppDimensions.paddingMedium),
 
-        if (order.status == 'assigned')
-          _buildStatusButton('Picked Up', Icons.inventory, () {
-            // Update status to picked up
+        // Button for "confirmed" status -> "Order is Preparing"
+        if (currentOrder.status == 'confirmed')
+          _buildStatusButton(
+            'Order is Preparing',
+            Icons.inventory,
+            () async {},
+          ),
+
+        // Button for "picked_up" status -> "Out for Delivery"
+        if (currentOrder.status == 'pickedup')
+          _buildStatusButton(
+            'Out for Delivery',
+            Icons.delivery_dining,
+            () async {
+              await _handleStatusUpdate(
+                () => ApiService.markOutForDelivery(
+                  currentOrder.id,
+                  currentOrder.deliveryBoyId,
+                ),
+                'out_for_delivery',
+                'Order marked as Out for Delivery!',
+              );
+            },
+          ),
+
+        // Button for "out_for_delivery" status -> "Delivered"
+        if (currentOrder.status == 'out_for_delivery')
+          _buildStatusButton('Mark as Delivered', Icons.check_circle, () async {
+            await _handleStatusUpdate(
+              () => ApiService.markAsDelivered(
+                currentOrder.id,
+                currentOrder.deliveryBoyId,
+              ),
+              'delivered',
+              'Order marked as Delivered!',
+            );
           }),
 
-        if (order.status == 'picked_up')
-          _buildStatusButton('On the Way', Icons.delivery_dining, () {
-            // Update status to on the way
-          }),
-
-        if (order.status == 'on_the_way')
-          _buildStatusButton('Delivered', Icons.check_circle, () {
-            // Update status to delivered
-          }),
-
-        if (order.status == 'delivered')
+        // Display completed status
+        if (currentOrder.status == 'delivered')
           Container(
             padding: const EdgeInsets.all(AppDimensions.paddingMedium),
             decoration: BoxDecoration(
@@ -299,22 +344,93 @@ class OrderDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatusButton(String text, IconData icon, VoidCallback onTap) {
+  // Optimized helper method to handle status updates
+  Future<void> _handleStatusUpdate(
+    Future<Map<String, dynamic>> Function() apiCall,
+    String newStatus,
+    String successMessage,
+  ) async {
+    try {
+      final response = await apiCall();
+
+      if (mounted && response['status'] == 'success') {
+        // Update local order status
+        setState(() {
+          currentOrder = Order(
+            id: currentOrder.id,
+            orderNumber: currentOrder.orderNumber,
+            customerName: currentOrder.customerName,
+            customerPhone: currentOrder.customerPhone,
+            customerAddress: currentOrder.customerAddress,
+            customerLatitude: currentOrder.customerLatitude,
+            customerLongitude: currentOrder.customerLongitude,
+            items: currentOrder.items,
+            totalAmount: currentOrder.totalAmount,
+            paymentMethod: currentOrder.paymentMethod,
+            status: newStatus, // ✅ Fixed: Use the newStatus parameter
+            orderTime: currentOrder.orderTime,
+            deliveryBoyId: currentOrder.deliveryBoyId,
+            notes: currentOrder.notes,
+          );
+        });
+
+        // Show success message
+        _showSnackBar(successMessage);
+
+        // Optional: Pop and signal parent to refresh
+        if (newStatus == 'delivered' || newStatus == 'out_for_delivery') {
+          Navigator.pop(context, true);
+        }
+      } else if (mounted) {
+        _showSnackBar(response['message'] ?? 'Failed to update status');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showSnackBar('Error: $e');
+      }
+    }
+  }
+
+  // Helper method for safe SnackBar display
+  void _showSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+      );
+    }
+  }
+
+  Widget _buildStatusButton(
+    String text,
+    IconData icon,
+    VoidCallback onTap, {
+    bool isLoading = false,
+  }) {
     return Container(
       width: double.infinity,
       height: AppDimensions.buttonHeight,
-      margin: const EdgeInsets.only(bottom: AppDimensions.paddingMedium),
+      margin: EdgeInsets.only(bottom: AppDimensions.paddingMedium.h),
       decoration: BoxDecoration(
-        gradient: AppGradients.primaryGradient,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-        boxShadow: AppShadows.buttonShadow,
+        gradient: isLoading ? null : AppGradients.primaryGradient,
+        color: isLoading ? Colors.grey.shade400 : null,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
+        boxShadow: isLoading ? null : AppShadows.buttonShadow,
       ),
       child: ElevatedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, color: Colors.white),
+        onPressed: isLoading ? null : onTap,
+        icon: isLoading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Icon(icon, color: Colors.white),
         label: Text(
-          text,
-          style: const TextStyle(
+          isLoading ? 'Updating...' : text,
+          style: TextStyle(
             color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -324,7 +440,7 @@ class OrderDetailScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
+            borderRadius: BorderRadius.circular(AppDimensions.radiusMedium.r),
           ),
         ),
       ),

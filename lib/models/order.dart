@@ -15,7 +15,7 @@ class Order {
   final String? notes;
   final DateTime orderTime;
   final DateTime? assignedTime;
-  final DateTime? pickedUpTime;
+  final DateTime? outForDeliveryTime;
   final DateTime? onTheWayTime;
   final DateTime? deliveredTime;
   final String deliveryBoyId;
@@ -37,7 +37,7 @@ class Order {
     this.notes,
     required this.orderTime,
     this.assignedTime,
-    this.pickedUpTime,
+    this.outForDeliveryTime,
     this.onTheWayTime,
     this.deliveredTime,
     required this.deliveryBoyId,
@@ -69,8 +69,8 @@ class Order {
       assignedTime: json['assigned_time'] != null
           ? DateTime.parse(json['assigned_time'])
           : null,
-      pickedUpTime: json['picked_up_time'] != null
-          ? DateTime.parse(json['picked_up_time'])
+      outForDeliveryTime: json['out_for_delivery_time'] != null
+          ? DateTime.parse(json['out_for_delivery_time'])
           : null,
       onTheWayTime: json['on_the_way_time'] != null
           ? DateTime.parse(json['on_the_way_time'])
@@ -100,7 +100,7 @@ class Order {
       'notes': notes,
       'order_time': orderTime.toIso8601String(),
       'assigned_time': assignedTime?.toIso8601String(),
-      'picked_up_time': pickedUpTime?.toIso8601String(),
+      'out_for_delivery_time': outForDeliveryTime?.toIso8601String(),
       'on_the_way_time': onTheWayTime?.toIso8601String(),
       'delivered_time': deliveredTime?.toIso8601String(),
       'delivery_boy_id': deliveryBoyId,
@@ -124,7 +124,7 @@ class Order {
     String? notes,
     DateTime? orderTime,
     DateTime? assignedTime,
-    DateTime? pickedUpTime,
+    DateTime? outForDeliveryTime,
     DateTime? onTheWayTime,
     DateTime? deliveredTime,
     Restaurant? restaurant,
@@ -147,7 +147,7 @@ class Order {
       notes: notes ?? this.notes,
       orderTime: orderTime ?? this.orderTime,
       assignedTime: assignedTime ?? this.assignedTime,
-      pickedUpTime: pickedUpTime ?? this.pickedUpTime,
+      outForDeliveryTime: outForDeliveryTime ?? this.outForDeliveryTime,
       onTheWayTime: onTheWayTime ?? this.onTheWayTime,
       deliveredTime: deliveredTime ?? this.deliveredTime,
       deliveryBoyId: deliveryBoyId ?? this.deliveryBoyId,
@@ -158,6 +158,7 @@ class Order {
 
   bool get isAssigned => status == 'assigned';
   bool get isPickedUp => status == 'picked_up';
+  bool get isOutForDelivery => status == 'out_for_delivery';
   bool get isOnTheWay => status == 'on_the_way';
   bool get isDelivered => status == 'delivered';
 

@@ -1,67 +1,61 @@
 class User {
-  final String id;
-  final String name;
-  final String email;
-  final String phone;
-  final String? profileImage;
-  final String? vehicleNumber;
-  final String? vehicleType;
+  final String userId;
+  final String userName;
+  final String userEmail;
+  final String userPhone;
+  final String profileImage;
+  final String vehicleNumber;
+  final String vehicleType;
   final bool isActive;
   final DateTime createdAt;
-  final DateTime? lastLoginAt;
 
   User({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.phone,
-    this.profileImage,
-    this.vehicleNumber,
-    this.vehicleType,
+    required this.userId,
+    required this.userName,
+    required this.userEmail,
+    required this.userPhone,
+    required this.profileImage,
+    required this.vehicleNumber,
+    required this.vehicleType,
     this.isActive = true,
     required this.createdAt,
-    this.lastLoginAt,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'] ?? '',
-      profileImage: json['profile_image'],
-      vehicleNumber: json['vehicle_number'],
-      vehicleType: json['vehicle_type'],
-      isActive: json['is_active'] ?? true,
+      userId: json['userId'] ?? '',
+      userName: json['userName'] ?? '',
+      userEmail: json['userEmail'] ?? '',
+      userPhone: json['userPhone'] ?? '',
+      profileImage: json['profileImage'],
+      vehicleNumber: json['vehicleNumber'],
+      vehicleType: json['vehicleType'],
+      isActive: json['isActive'] ?? true,
       createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toIso8601String(),
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),
-      lastLoginAt: json['last_login_at'] != null
-          ? DateTime.parse(json['last_login_at'])
-          : null,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'name': name,
-      'email': email,
-      'phone': phone,
-      'profile_image': profileImage,
-      'vehicle_number': vehicleNumber,
-      'vehicle_type': vehicleType,
-      'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
-      'last_login_at': lastLoginAt?.toIso8601String(),
+      'userId': userId,
+      'userName': userName,
+      'userEmail': userEmail,
+      'userPhone': userPhone,
+      'profileImage': profileImage,
+      'vehicleNumber': vehicleNumber,
+      'vehicleType': vehicleType,
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
   User copyWith({
-    String? id,
-    String? name,
-    String? email,
-    String? phone,
+    String? userId,
+    String? userName,
+    String? userEmail,
+    String? userPhone,
     String? profileImage,
     String? vehicleNumber,
     String? vehicleType,
@@ -70,30 +64,29 @@ class User {
     DateTime? lastLoginAt,
   }) {
     return User(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      email: email ?? this.email,
-      phone: phone ?? this.phone,
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      userEmail: userEmail ?? this.userEmail,
+      userPhone: userPhone ?? this.userPhone,
       profileImage: profileImage ?? this.profileImage,
       vehicleNumber: vehicleNumber ?? this.vehicleNumber,
       vehicleType: vehicleType ?? this.vehicleType,
       isActive: isActive ?? this.isActive,
       createdAt: createdAt ?? this.createdAt,
-      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
     );
   }
 
   @override
   String toString() {
-    return 'User(id: $id, name: $name, email: $email, phone: $phone)';
+    return 'User(userId: $userId, userName: $userName, userEmail: $userEmail, userPhone: $userPhone)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is User && other.id == id;
+    return other is User && other.userId == userId;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => userId.hashCode;
 }

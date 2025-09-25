@@ -1,5 +1,5 @@
 class Restaurant {
-  final String id;
+  final int restaurantId;
   final String name;
   final String address;
   final double latitude;
@@ -12,7 +12,7 @@ class Restaurant {
   final DateTime createdAt;
 
   Restaurant({
-    required this.id,
+    required this.restaurantId,
     required this.name,
     required this.address,
     required this.latitude,
@@ -27,7 +27,7 @@ class Restaurant {
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
     return Restaurant(
-      id: json['id'] ?? '',
+      restaurantId: json['restaurantId'] ?? 0,
       name: json['name'] ?? '',
       address: json['address'] ?? '',
       latitude: (json['latitude'] ?? 0.0).toDouble(),
@@ -36,16 +36,16 @@ class Restaurant {
       email: json['email'],
       logo: json['logo'],
       description: json['description'],
-      isActive: json['is_active'] ?? true,
+      isActive: json['isActive'] ?? true,
       createdAt: DateTime.parse(
-        json['created_at'] ?? DateTime.now().toIso8601String(),
+        json['createdAt'] ?? DateTime.now().toIso8601String(),
       ),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'restaurantId': restaurantId,
       'name': name,
       'address': address,
       'latitude': latitude,
@@ -54,13 +54,13 @@ class Restaurant {
       'email': email,
       'logo': logo,
       'description': description,
-      'is_active': isActive,
-      'created_at': createdAt.toIso8601String(),
+      'isActive': isActive,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
   Restaurant copyWith({
-    String? id,
+    int? restaurantId,
     String? name,
     String? address,
     double? latitude,
@@ -73,7 +73,7 @@ class Restaurant {
     DateTime? createdAt,
   }) {
     return Restaurant(
-      id: id ?? this.id,
+      restaurantId: restaurantId ?? this.restaurantId,
       name: name ?? this.name,
       address: address ?? this.address,
       latitude: latitude ?? this.latitude,
@@ -89,15 +89,15 @@ class Restaurant {
 
   @override
   String toString() {
-    return 'Restaurant(id: $id, name: $name, address: $address)';
+    return 'Restaurant(restaurantId: $restaurantId, name: $name, address: $address)';
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Restaurant && other.id == id;
+    return other is Restaurant && other.restaurantId == restaurantId;
   }
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => restaurantId.hashCode;
 }

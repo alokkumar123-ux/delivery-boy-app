@@ -52,11 +52,11 @@ class AppHelpers {
   /// Get status display text
   static String getStatusText(String status) {
     switch (status.toLowerCase()) {
-      case 'assigned':
+      case 'confirmed':
         return 'Assigned';
-      case 'picked_up':
-        return 'Picked Up';
-      case 'on_the_way':
+      case 'pickedup':
+        return 'Perparing';
+      case 'out_for_delivery':
         return 'On the Way';
       case 'delivered':
         return 'Delivered';

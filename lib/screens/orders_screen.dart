@@ -1,12 +1,18 @@
 import 'package:boy_boy/models/restaurant.dart';
+import 'package:boy_boy/services/notification_services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../providers/ui_state_provider.dart';
 import '../utils/constants.dart';
 import '../models/order.dart';
 import '../widgets/order_card.dart';
 import 'order_detail_screen.dart';
 import 'map_screen.dart';
+import 'dart:async';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -17,12 +23,162 @@ class OrdersScreen extends StatefulWidget {
 
 class _OrdersScreenState extends State<OrdersScreen> {
   // final TextEditingController _searchController = TextEditingController();
-  String _selectedStatus = 'all';
+  NotificationServices notificationServices = NotificationServices();
+  String _selectedStatus = 'preparing';
+  List<Order> _orders = [];
+  bool _isLoading = false;
+  Timer? _pollTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchOrders();
+    notificationServices.requestNotificationPermission();
+  }
 
   @override
   void dispose() {
-    // _searchController.dispose();
+    _pollTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _fetchOrders() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final provider = Provider.of<UIStateProvider>(context, listen: false);
+    final userId = provider.currentUser?.userId.replaceAll("user_", "") ?? '';
+    String endpoint;
+    if (_selectedStatus == 'preparing') {
+      final url = Uri.parse(
+        'https://resto.swaadpos.in/api/delivery-executives/$userId/orders',
+      );
+      try {
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['status'] == 'success' && data['orders'] is List) {
+            setState(() {
+              _orders = (data['orders'] as List)
+                  .map((o) => Order.fromJson(_normalizeOrderJson(o)))
+                  .toList();
+            });
+          } else {
+            setState(() {
+              _orders = [];
+            });
+          }
+        } else {
+          setState(() {
+            _orders = [];
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _orders = [];
+        });
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    } else if (_selectedStatus == 'out_for_delivery') {
+      final url = Uri.parse(
+        'https://resto.swaadpos.in/api/delivery-executives/out-for-delivery/$userId',
+      );
+      try {
+        final response = await http.get(url);
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['status'] == 'success' && data['orders'] is List) {
+            setState(() {
+              _orders = (data['orders'] as List)
+                  .map((o) => Order.fromJson(_normalizeOrderJson(o)))
+                  .toList();
+            });
+          } else {
+            setState(() {
+              _orders = [];
+            });
+          }
+        } else {
+          setState(() {
+            _orders = [];
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _orders = [];
+        });
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    } else if (_selectedStatus == 'delivered') {
+      final url = Uri.parse(
+        'https://resto.swaadpos.in/api/delivery-executives/todays-delivered-orders',
+      );
+      try {
+        final response = await http.post(
+          url,
+          body: {'delivery_boy_id': '$userId'},
+        );
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          if (data['status'] == 'success' && data['orders'] is List) {
+            setState(() {
+              _orders = (data['orders'] as List)
+                  .map((o) => Order.fromJson(_normalizeOrderJson(o)))
+                  .toList();
+            });
+          } else {
+            setState(() {
+              _orders = [];
+            });
+          }
+        } else {
+          setState(() {
+            _orders = [];
+          });
+        }
+      } catch (e) {
+        setState(() {
+          _orders = [];
+        });
+      }
+      setState(() {
+        _isLoading = false;
+      });
+    } else {
+      endpoint = 'orders';
+    }
+  }
+
+  Map<String, dynamic> _normalizeOrderJson(Map<String, dynamic> json) {
+    return {
+      'id': json['id'] ?? '',
+      'order_number': json['orderNumber'] ?? '',
+      'customer_name': json['customerName'] ?? '',
+      'customer_phone': json['customerPhone'] ?? '',
+      'customer_address': json['customerAddress'] ?? '',
+      'customer_latitude':
+          double.tryParse(json['customerLatitude']?.toString() ?? '0') ?? 0.0,
+      'customer_longitude':
+          double.tryParse(json['customerLongitude']?.toString() ?? '0') ?? 0.0,
+      'items': json['items'] ?? [],
+      'total_amount':
+          double.tryParse(json['totalAmount']?.toString() ?? '0') ?? 0.0,
+      'payment_method': json['paymentMethod'] ?? '',
+      'status': json['status'] ?? '',
+      'notes': json['notes'],
+      'order_time': json['orderTime'],
+      'assigned_time': json['assignedTime'],
+      'out_for_delivery_time': json['outForDeliveryTime'],
+      'on_the_way_time': json['onTheWayTime'],
+      'delivered_time': json['deliveredTime'],
+      'delivery_boy_id': json['deliveryBoyId'] ?? '',
+      'distance': null,
+      'estimated_time': null,
+    };
   }
 
   @override
@@ -56,19 +212,52 @@ class _OrdersScreenState extends State<OrdersScreen> {
       child: Row(
         children: [
           // User Avatar
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: AppShadows.cardShadow,
-            ),
-            child: const Icon(
-              Icons.person,
-              color: AppColors.primaryOrange,
-              size: 30,
-            ),
+          Consumer<UIStateProvider>(
+            builder: (context, provider, child) {
+              final user = provider.currentUser;
+              return Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: AppShadows.cardShadow,
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(25),
+                  child:
+                      user?.profileImage != null &&
+                          user!.profileImage!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: user.profileImage!,
+                          width: 50,
+                          height: 50,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.white,
+                            child: const Icon(
+                              Icons.person,
+                              color: AppColors.primaryOrange,
+                              size: 30,
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.white,
+                            child: const Icon(
+                              Icons.person,
+                              color: AppColors.primaryOrange,
+                              size: 30,
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.person,
+                          color: AppColors.primaryOrange,
+                          size: 30,
+                        ),
+                ),
+              );
+            },
           ),
 
           const SizedBox(width: AppDimensions.paddingMedium),
@@ -82,7 +271,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                   builder: (context, provider, child) {
                     final user = provider.currentUser;
                     return Text(
-                      user?.name ?? 'Delivery Boy',
+                      user?.userName ?? 'Delivery Boy',
                       style: AppTextStyles.header3.copyWith(
                         color: Colors.white,
                       ),
@@ -104,20 +293,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ],
             ),
           ),
-
-          // // Notification Icon
-          // Container(
-          //   padding: const EdgeInsets.all(AppDimensions.paddingSmall),
-          //   decoration: BoxDecoration(
-          //     color: Colors.white.withOpacity(0.2),
-          //     borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-          //   ),
-          //   child: const Icon(
-          //     Icons.notifications,
-          //     color: Colors.white,
-          //     size: 24,
-          //   ),
-          // ),
         ],
       ),
     );
@@ -130,40 +305,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
       ),
       child: Column(
         children: [
-          // Search Bar - Commented out for now
-          // Container(
-          //   decoration: BoxDecoration(
-          //     color: Colors.white,
-          //     borderRadius: BorderRadius.circular(AppDimensions.radiusMedium),
-          //     boxShadow: AppShadows.cardShadow,
-          //   ),
-          //   child: TextField(
-          //     controller: _searchController,
-          //     onChanged: (value) {
-          //       final provider = Provider.of<UIStateProvider>(
-          //         context,
-          //         listen: false,
-          //       );
-          //       provider.setSearchQuery(value);
-          //     },
-          //     decoration: InputDecoration(
-          //       hintText: 'Search orders...',
-          //       hintStyle: TextStyle(color: AppColors.textCaption),
-          //       prefixIcon: const Icon(
-          //         Icons.search,
-          //         color: AppColors.textCaption,
-          //       ),
-          //       border: InputBorder.none,
-          //       contentPadding: const EdgeInsets.symmetric(
-          //         horizontal: AppDimensions.paddingMedium,
-          //         vertical: AppDimensions.paddingMedium,
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // const SizedBox(height: AppDimensions.paddingMedium),
-
           // Status Filter Chips
           _buildStatusFilterChips(),
         ],
@@ -173,21 +314,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget _buildStatusFilterChips() {
     final statuses = [
-      {'key': 'all', 'label': 'All', 'color': AppColors.textPrimary},
       {
-        'key': 'assigned',
-        'label': 'Assigned',
+        'key': 'preparing',
+        'label': 'Preparing',
         'color': AppColors.statusAssigned,
       },
       {
-        'key': 'picked_up',
-        'label': 'Picked Up',
+        'key': 'out_for_delivery',
+        'label': 'Out for Delivery',
         'color': AppColors.statusPickedUp,
-      },
-      {
-        'key': 'on_the_way',
-        'label': 'On the Way',
-        'color': AppColors.statusOnTheWay,
       },
       {
         'key': 'delivered',
@@ -197,36 +332,38 @@ class _OrdersScreenState extends State<OrdersScreen> {
     ];
 
     return SizedBox(
-      height: 40,
+      height: 40.h,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: statuses.length,
         itemBuilder: (context, index) {
           final status = statuses[index];
           final isSelected = _selectedStatus == status['key'];
-
           return Container(
-            margin: const EdgeInsets.only(right: AppDimensions.paddingSmall),
+            margin: EdgeInsets.only(right: AppDimensions.paddingSmall.w),
             child: GestureDetector(
               onTap: () {
                 setState(() {
                   _selectedStatus = status['key'] as String;
                 });
-                final provider = Provider.of<UIStateProvider>(
-                  context,
-                  listen: false,
-                );
-                provider.setSelectedStatus(_selectedStatus);
+                // Reset polling when status changes
+                _pollTimer?.cancel();
+                if (_selectedStatus == 'preparing') {
+                  _pollTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+                    _fetchOrders();
+                  });
+                }
+                _fetchOrders();
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.paddingMedium,
-                  vertical: AppDimensions.paddingSmall,
+                padding: EdgeInsets.symmetric(
+                  horizontal: AppDimensions.paddingMedium.w,
+                  vertical: AppDimensions.paddingSmall.h,
                 ),
                 decoration: BoxDecoration(
                   color: isSelected ? status['color'] as Color : Colors.white,
                   borderRadius: BorderRadius.circular(
-                    AppDimensions.radiusMedium,
+                    AppDimensions.radiusMedium.r,
                   ),
                   border: Border.all(
                     color: isSelected
@@ -242,7 +379,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                           ? Colors.white
                           : status['color'] as Color,
                       fontWeight: FontWeight.w600,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                     ),
                   ),
                 ),
@@ -255,41 +392,36 @@ class _OrdersScreenState extends State<OrdersScreen> {
   }
 
   Widget _buildOrdersList() {
-    return Consumer<UIStateProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoading) {
-          return _buildLoadingState();
-        }
-
-        final orders = provider.filteredOrders;
-
-        if (orders.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        return RefreshIndicator(
-          onRefresh: provider.refreshOrders,
-          color: AppColors.primaryOrange,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(AppDimensions.paddingLarge),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return Container(
-                margin: const EdgeInsets.only(
-                  bottom: AppDimensions.paddingMedium,
-                ),
-                child: OrderCard(
-                  order: order,
-                  onTap: () => _navigateToOrderDetail(order),
-                  onViewRoute: () =>
-                      _navigateToMapScreen(order, provider.currentRestaurant!),
-                ),
-              );
-            },
-          ),
-        );
-      },
+    if (_isLoading) {
+      return _buildLoadingState();
+    }
+    if (_orders.isEmpty) {
+      return _buildEmptyState();
+    }
+    return RefreshIndicator(
+      onRefresh: _fetchOrders,
+      color: AppColors.primaryOrange,
+      child: ListView.builder(
+        padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
+        itemCount: _orders.length,
+        itemBuilder: (context, index) {
+          final order = _orders[index];
+          return Container(
+            margin: EdgeInsets.only(bottom: AppDimensions.paddingMedium.h),
+            child: OrderCard(
+              order: order,
+              onTap: () => _navigateToOrderDetail(order),
+              onViewRoute: () {
+                final provider = Provider.of<UIStateProvider>(
+                  context,
+                  listen: false,
+                );
+                _navigateToMapScreen(order, provider.currentRestaurant!);
+              },
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -315,15 +447,15 @@ class _OrdersScreenState extends State<OrdersScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 120,
-            height: 120,
+            width: 120.w,
+            height: 120.w,
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(60),
+              borderRadius: BorderRadius.circular(60.r),
             ),
             child: const Icon(Icons.inbox, size: 60, color: Colors.white70),
           ),
-          const SizedBox(height: AppDimensions.paddingLarge),
+          SizedBox(height: AppDimensions.paddingLarge.h),
           const Text(
             'No orders found',
             style: TextStyle(
@@ -332,7 +464,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: AppDimensions.paddingSmall),
+          SizedBox(height: AppDimensions.paddingSmall.h),
           const Text(
             'Orders will appear here when assigned',
             style: TextStyle(color: Colors.white70, fontSize: 16),
@@ -347,7 +479,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => OrderDetailScreen(order: order)),
-    );
+    ).then((shouldRefresh) {
+      if (shouldRefresh == true) {
+        _fetchOrders();
+      }
+    });
   }
 
   void _navigateToMapScreen(Order order, Restaurant restaurant) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/order.dart';
 import '../utils/constants.dart';
@@ -21,17 +22,17 @@ class OrderCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.paddingLarge,
-          vertical: AppDimensions.paddingSmall,
+        margin: EdgeInsets.symmetric(
+          horizontal: AppDimensions.paddingLarge.w,
+          vertical: AppDimensions.paddingSmall.h,
         ),
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusLarge),
+          borderRadius: BorderRadius.circular(AppDimensions.radiusLarge.r),
           boxShadow: AppShadows.cardShadow,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+          padding: EdgeInsets.all(AppDimensions.paddingLarge.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -40,7 +41,7 @@ class OrderCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      order.orderNumber,
+                      order.id,
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textCaption,
                         fontWeight: FontWeight.w500,
@@ -51,12 +52,12 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: AppDimensions.paddingMedium),
+              SizedBox(height: AppDimensions.paddingMedium.h),
 
               // Customer Name
               Text(order.customerName, style: AppTextStyles.header3),
 
-              const SizedBox(height: AppDimensions.paddingSmall),
+              SizedBox(height: AppDimensions.paddingSmall.h),
 
               // Address
               Row(
@@ -79,7 +80,7 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: AppDimensions.paddingMedium),
+              SizedBox(height: AppDimensions.paddingMedium.h),
 
               // Order Details Row
               Row(
@@ -105,7 +106,7 @@ class OrderCard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: AppDimensions.paddingMedium),
+              SizedBox(height: AppDimensions.paddingMedium.h),
               Container(
                 child: _buildContactChip(
                   icon: Icons.phone,
@@ -113,7 +114,7 @@ class OrderCard extends StatelessWidget {
                   onTap: () => _makePhoneCall(order.customerPhone),
                 ),
               ),
-              const SizedBox(height: AppDimensions.paddingMedium),
+              SizedBox(height: AppDimensions.paddingMedium.h),
 
               // Items Preview
               if (order.items.isNotEmpty) ...[
@@ -155,7 +156,7 @@ class OrderCard extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(width: AppDimensions.paddingMedium),
+                  SizedBox(width: AppDimensions.paddingMedium.w),
 
                   Expanded(
                     child: _buildActionButton(

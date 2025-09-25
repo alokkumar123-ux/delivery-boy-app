@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'providers/ui_state_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_navigation_screen.dart';
 import 'utils/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'models/user.dart';
+import 'models/restaurant.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const DeliveryBoyApp());
 }
 
@@ -16,17 +25,25 @@ class DeliveryBoyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [ChangeNotifierProvider(create: (_) => UIStateProvider())],
-      child: MaterialApp(
-        title: 'Delivery Boy App',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: AppColors.primaryOrange,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-        ),
-        home: const AppWrapper(),
+      child: ScreenUtilInit(
+        designSize: const Size(390, 844),
+        minTextAdapt: true,
+        splitScreenMode: true,
+        builder: (context, child) {
+          return MaterialApp(
+            title: 'Delivery Boy App',
+            debugShowCheckedModeBanner: false,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: AppColors.primaryOrange,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            home: child,
+          );
+        },
+        child: const AppWrapper(),
       ),
     );
   }
@@ -50,28 +67,63 @@ class _AppWrapperState extends State<AppWrapper> {
   }
 
   void _checkLoginStatus() async {
-    // Simulate checking login status
-    await Future.delayed(const Duration(milliseconds: 1000));
+    final prefs = await SharedPreferences.getInstance();
 
-    // For demo purposes, start with login screen
-    // In real app, check shared preferences for stored token
+    // Check if this is the first app launch after installation
+    final isFirstLaunch = prefs.getBool('is_first_launch') ?? true;
+
+    if (isFirstLaunch) {
+      await prefs.clear();
+      await prefs.setBool('is_first_launch', false);
+
+      setState(() {
+        _isLoggedIn = false;
+        _isInitialized = true;
+      });
+      return;
+    }
+
+    final storedUserId = prefs.getString('userId');
+    final userJson = prefs.getString('user_json');
+    final restaurantJson = prefs.getString('restaurant_json');
+
+    // More strict validation - all data must exist and be valid
+    bool hasValidSession = false;
+
+    if (storedUserId != null &&
+        storedUserId.isNotEmpty &&
+        userJson != null &&
+        userJson.isNotEmpty &&
+        restaurantJson != null &&
+        restaurantJson.isNotEmpty) {
+      try {
+        // Try to parse the JSON to ensure it's valid
+        final user = User.fromJson(jsonDecode(userJson));
+        final restaurant = Restaurant.fromJson(jsonDecode(restaurantJson));
+
+        // If parsing succeeds, update the provider
+        final provider = Provider.of<UIStateProvider>(context, listen: false);
+        provider.setUserData(user, restaurant);
+
+        hasValidSession = true;
+      } catch (e) {
+        // Clear invalid data
+        await prefs.remove('userId');
+        await prefs.remove('user_json');
+        await prefs.remove('restaurant_json');
+        hasValidSession = false;
+      }
+    } else {
+      hasValidSession = false;
+    }
+
     setState(() {
-      _isLoggedIn = false;
+      _isLoggedIn = hasValidSession;
       _isInitialized = true;
     });
   }
 
-  void _onLoginSuccess() {
-    setState(() {
-      _isLoggedIn = true;
-    });
-
-    // Initialize mock data after successful login
-    final provider = Provider.of<UIStateProvider>(context, listen: false);
-    provider.initializeMockData();
-  }
-
-  void _onLogout() {
+  void _onLogout() async {
     setState(() {
       _isLoggedIn = false;
     });
@@ -79,6 +131,13 @@ class _AppWrapperState extends State<AppWrapper> {
     // Clear data on logout
     final provider = Provider.of<UIStateProvider>(context, listen: false);
     provider.clearData();
+
+    // Clear ALL stored session data
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('userId');
+    await prefs.remove('user_json');
+    await prefs.remove('restaurant_json');
+    // Note: Don't clear 'is_first_launch' flag on logout, only on fresh install
   }
 
   @override

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import '../providers/ui_state_provider.dart';
 import '../utils/constants.dart';
@@ -18,21 +19,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
+  List<Widget> get _screens => [
     const OrdersScreen(),
     // const _MapPlaceholderScreen(),
-    const ProfileScreen(),
+    ProfileScreen(onLogout: widget.onLogout),
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize mock data when the app starts
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final provider = Provider.of<UIStateProvider>(context, listen: false);
-      provider.initializeMockData();
-    });
-  }
 
   @override
   void dispose() {
@@ -80,8 +71,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
+          topLeft: Radius.circular(30.r),
+          topRight: Radius.circular(30.r),
         ),
         color: Colors.white,
         boxShadow: [
@@ -107,12 +98,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 label: 'Orders',
                 isSelected: _currentIndex == 0,
               ),
-              // _buildNavItem(
-              //   index: 1,
-              //   icon: Icons.map,
-              //   label: 'Map',
-              //   isSelected: _currentIndex == 1,
-              // ),
               _buildNavItem(
                 index: 1,
                 icon: Icons.person,
@@ -153,16 +138,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               color: isSelected
                   ? AppColors.primaryOrange
                   : AppColors.textCaption,
-              size: 24,
+              size: 24.r,
             ),
-            const SizedBox(height: 4),
+             SizedBox(height: 4.h),
             Text(
               label,
               style: TextStyle(
                 color: isSelected
                     ? AppColors.primaryOrange
                     : AppColors.textCaption,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               ),
             ),
